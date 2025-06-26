@@ -1,0 +1,13 @@
+[project]
+name = "ai-repo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ag2[openai]>=0.9.3",
+    "autogen>=0.9.3",
+    "azure-cli>=2.0.67",
+    "azure-identity>=1.23.0",
+    "streamlit>=1.46.0",
+]
