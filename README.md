@@ -146,7 +146,7 @@ The application will start and be available at `http://localhost:8501` in your w
 2. **Scan Your Codebase**:
 
    - Click "🔍 Scan Folder" to analyze your project
-   - The app will create a JSON summary of your codebase and train the AI agent
+   - The app will create a repository summary and train the AI agent
 
 3. **Explore Your Code**:
    - Use the sidebar to filter and select files
@@ -165,16 +165,13 @@ AI_repo/
 ├── README.md              # This file
 ├── config.ini             # Azure OpenAI configuration (create from configDev.ini)
 ├── configDev.ini          # Configuration template
-├── repo_summary.json      # Generated codebase summary
 ├── uv.lock               # Dependency lock file
 ├── azure_agents/         # AI agent implementation
 │   ├── __init__.py
 │   └── agents.py         # RampUpAgent class with Azure OpenAI integration
 └── utility/              # Utility functions
     ├── __init__.py
-    ├── create_json.py    # JSON creation utilities
-    └── static/
-        └── repo_summary.json
+    └── create_json.py    # JSON creation utilities
 ```
 
 ## Features in Detail

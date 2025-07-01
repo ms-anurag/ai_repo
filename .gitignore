@@ -11,3 +11,7 @@ wheels/
 
 # Configuration files
 config.ini
+
+# Runtime files
+*.log
+repo_summary.json
