@@ -10,4 +10,5 @@ dependencies = [
     "azure-cli>=2.0.67",
     "azure-identity>=1.23.0",
     "streamlit>=1.46.0",
+    "setuptools>=70.0.0",
 ]
