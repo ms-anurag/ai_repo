@@ -10,7 +10,8 @@ The AI Codebase Analyzer is a powerful Streamlit-based application that helps de
 - **🧠 AI-Powered Code Analysis**: Get detailed insights and explanations about your code using Azure OpenAI
 - **📚 Learning Resources**: Receive personalized learning recommendations based on your codebase
 - **💬 Interactive AI Chat**: Ask questions about your code and get context-aware responses
-- **🔍 File Filtering & Navigation**: Easy-to-use interface for browsing and selecting files
+- **🔐 Automated Security Analysis**: Identify security flaws with a multi-agent system that provides categorized findings and an overall security score.
+- **�🔍 File Filtering & Navigation**: Easy-to-use interface for browsing and selecting files
 - **📊 Progress Tracking**: Real-time progress indicators during folder scanning
 
 ## Prerequisites
@@ -154,7 +155,8 @@ The application will start and be available at `http://localhost:8501` in your w
      - **📄 File Content**: View the raw code
      - **🧠 Code Analysis**: Get AI-powered insights
      - **📚 Learning Resources**: Receive educational recommendations
-     - **💬 AI Chat**: Interactive Q&A about your code
+     - **� Security Flaws**: View a detailed security analysis, including an overall score and categorized vulnerabilities.
+     - **�💬 AI Chat**: Interactive Q&A about your code
 
 ## Project Structure
 
