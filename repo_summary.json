@@ -1,22 +1,42 @@
 [
   {
-    "file_name": "agents.py",
-    "relative_path": "C:\\hack\\hack2025\\AI_repo\\azure_agents\\agents.py",
+    "file_name": "demo_express_vuln.js",
+    "relative_path": "C:\\hack\\hack2025\\AI_repo\\demo\\demo_express_vuln.js",
     "metadata": {
-      "size_bytes": 8730,
-      "last_modified": "2025-06-26T11:33:49.221044",
-      "created_at": "2025-06-21T02:43:03.546033",
+      "size_bytes": 2163,
+      "last_modified": "2025-09-16T14:10:07.080871",
+      "created_at": "2025-09-16T14:10:00.168556",
+      "file_type": ".js"
+    }
+  },
+  {
+    "file_name": "demo_flask_vuln.py",
+    "relative_path": "C:\\hack\\hack2025\\AI_repo\\demo\\demo_flask_vuln.py",
+    "metadata": {
+      "size_bytes": 1516,
+      "last_modified": "2025-09-16T14:10:30.344171",
+      "created_at": "2025-09-16T14:10:25.277366",
       "file_type": ".py"
     }
   },
   {
-    "file_name": "__init__.py",
-    "relative_path": "C:\\hack\\hack2025\\AI_repo\\azure_agents\\__init__.py",
+    "file_name": "demo_native_vuln.c",
+    "relative_path": "C:\\hack\\hack2025\\AI_repo\\demo\\demo_native_vuln.c",
     "metadata": {
-      "size_bytes": 0,
-      "last_modified": "2025-06-21T02:42:41.610036",
-      "created_at": "2025-06-21T02:42:41.610036",
-      "file_type": ".py"
+      "size_bytes": 557,
+      "last_modified": "2025-09-16T14:12:03.007699",
+      "created_at": "2025-09-16T14:11:47.564905",
+      "file_type": ".c"
+    }
+  },
+  {
+    "file_name": "demo_spring_vuln.java",
+    "relative_path": "C:\\hack\\hack2025\\AI_repo\\demo\\demo_spring_vuln.java",
+    "metadata": {
+      "size_bytes": 1229,
+      "last_modified": "2025-09-16T14:10:46.969719",
+      "created_at": "2025-09-16T14:10:43.008246",
+      "file_type": ".java"
     }
   }
 ]

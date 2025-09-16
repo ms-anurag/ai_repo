@@ -215,3 +215,190 @@ class RampUpAgent:
         )
 
         return response
+
+    def fetch_security_flaws(self, selected_file, code):
+        """Perform a security review of the provided code file and return structured findings."""
+        chatAgent = AssistantAgent(
+            name="AI_Security_Reviewer",
+            system_message=(
+                "You are a seasoned application security engineer performing a focused secure code review. "
+                "Only analyze the provided code content (do not invent unseen files). Be precise, actionable, and concise."
+            ),
+            llm_config={
+                "config_list": self.config_list,
+            }
+        )
+
+        training_prompt = f"""
+                    You are a security code reviewer. I will give you a code. Follow these rules when analyzing only the provided code:
+
+                    Identify all relevant security issues and classify each into one of these categories: Authentication, Authorization, Input Validation, Injection (SQL/LDAP/OS), XSS, CSRF, Remote Code Execution (RCE), Insecure Deserialization, Insecure Configuration, Cryptography, Secrets Management, File/Path Traversal, Unsafe File Upload/Download, SSRF, Race Condition/TOCTOU, Denial of Service, Dependency Vulnerabilities, Business Logic, Logging/Errors, Memory Safety, or Other.
+
+                    For each finding provide:
+
+                    Title (short)
+
+                    Category (one of the list above)
+
+                    Severity (Critical / High / Medium / Low) with one-sentence justification
+
+                    Location (file + approximate line numbers or function name). If exact lines aren’t given, give a best guess.
+
+                    Why it’s vulnerable (concise technical explanation)
+
+                    Exploitability (steps an attacker would take; if possible include a short PoC request/ payload)
+
+                    Fix / Remediation: exact, actionable steps. Provide a minimal code patch or diff showing the fix (only the changed lines or a full corrected function if small).
+
+                    Mitigations/defense-in-depth suggestions (config/runtime/hardening).
+
+                    References: CWE number, and 1–2 authoritative references (CWE, OWASP, or docs).
+
+                    If no vulnerabilities of a given category are present, say “No issues found in <category>”.
+
+                    At the end provide a prioritized checklist (top 3-5 fixes to do first) and a single-line summary of overall risk.
+
+                    Explicitly do not change application logic unless required for security; prefer minimal, well-commented fixes.
+
+                    Now review the following file:
+
+                    File: {selected_file}
+
+                    Code:
+                    ```
+                    {code}
+                    ```
+                    """
+
+        response = chatAgent.generate_reply(
+            messages=[{"role": "user", "content": training_prompt}],
+        )
+
+        return response
+
+    def fetch_security_flaws_by_category(self, selected_file, code, overall_findings=None):
+        """Category-structured security assessment with one section per category and prioritized wrap-up.
+
+        overall_findings: optional string of previously generated holistic findings to give additional context.
+        """
+        chatAgent = AssistantAgent(
+            name="AI_Security_Category_Reviewer",
+            system_message=(
+                "You are a senior application security engineer. Output ONLY structured, category-organized findings. "
+                "If a category has no issues, write exactly: 'No issues found in <Category>'."
+            ),
+            llm_config={
+                "config_list": self.config_list,
+            }
+        )
+
+        prompt = f"""
+                    Perform a category-focused security review of the single file below.
+
+                    File: {selected_file}
+
+                    Code:
+                    ```
+                    {code}
+                    ```
+
+                    Categories (in this exact order; use headings):
+                    1. Injection — SQL/OS Command
+                    2. XSS
+                    3. CSRF
+                    4. Authentication
+                    5. Authorization
+                    6. Insecure Deserialization
+                    7. Cryptography
+                    8. Secrets Management
+                    9. Insecure Configuration
+                    10. File Upload / Path Traversal
+                    11. SSRF
+                    12. Dependency Vulnerabilities
+                    13. Business Logic
+                    14. Denial of Service / Rate Limiting
+                    15. Memory Safety
+                    16. Logging / Errors
+
+                    For each category WITH issues:
+                    - Findings (numbered)
+                    - Title
+                    - Risk: <Severity (Critical/High/Medium/Low)> - <justification>
+                    - Location (best-effort line or function)
+                    - Root Cause
+                    - Exploit Sketch / PoC (payload or steps if applicable)
+                    - Remediation (minimal diff or replacement snippet)
+                    - References (CWE + 1 authoritative link)
+
+                    If no issues: do not include the category in the output.
+
+                    Finish with:
+                    ### Top 5 Remediation Priorities
+                    - (ranked list)
+
+                    ### Overall Risk Summary
+                    <one line>
+
+                    Do NOT invent code outside this file. Do NOT repeat the full source.
+                    """
+        if overall_findings:
+            prompt += "\n\nContext (previous holistic findings summary provided earlier; do NOT repeat verbatim, only refine):\n" + overall_findings[:6000]
+
+        response = chatAgent.generate_reply(messages=[{"role": "user", "content": prompt}])
+        return response
+
+    def compute_security_score(self, selected_file, code, overall_findings, category_findings):
+        """Derive an overall security score (0-100) and concise summary based on earlier agent outputs."""
+        chatAgent = AssistantAgent(
+            name="AI_Security_Scorer",
+            system_message=(
+                "You are an impartial security risk scoring engine. Produce ONLY a short structured result."
+            ),
+            llm_config={
+                "config_list": self.config_list,
+            }
+        )
+
+        scoring_prompt = f"""
+You will compute a security risk score for a single file based on prior analyses.
+
+File: {selected_file}
+
+Code (reference excerpt – do not re-audit raw code fully, rely on findings):
+---
+{code[:4000]}
+---
+
+Holistic Findings (truncated if long):
+---
+{overall_findings[:8000]}
+---
+
+Category Findings (truncated if long):
+---
+{category_findings[:8000]}
+---
+
+Instructions:
+1. Parse severities and counts. Treat Critical=4, High=3, Medium=2, Low=1 for weighting.
+2. Consider breadth of categories impacted, exploitability indications, presence of systemic issues (auth gaps, injection, secrets).
+3. Output strictly in this JSON-like markdown block:
+
+```json
+{{
+  "score": <integer 0-100 (100 best)>,
+  "risk_level": "Low|Moderate|High|Critical",
+  "primary_drivers": ["short phrase", "short phrase"],
+  "immediate_actions": ["top fix 1", "top fix 2", "top fix 3"],
+  "summary": "single concise sentence"
+}}
+```
+
+Rules:
+- Never exceed one sentence in summary.
+- Score bands suggestion: 0-39 Critical, 40-59 High, 60-79 Moderate, 80-100 Low (override if justified).
+- Do NOT invent new findings; base only on provided findings.
+"""
+
+        response = chatAgent.generate_reply(messages=[{"role": "user", "content": scoring_prompt}])
+        return response

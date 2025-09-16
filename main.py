@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from json import dumps
+import json
 from pathlib import Path
 import time
 from utility.create_json import get_file_details, create_repo_json
@@ -44,12 +44,66 @@ def read_file_content(folder_path, relative_path):
     except Exception as e:
         return f"Error reading file: {e}"
 
+def render_security_score(score_json_string):
+    try:
+        # Clean up the string to make it valid JSON
+        if score_json_string.strip().startswith("```json"):
+            score_json_string = score_json_string.strip()[7:-4]
+
+        score_data = json.loads(score_json_string)
+        
+        score = score_data.get("score", 0)
+        risk_level = score_data.get("risk_level", "N/A")
+        primary_drivers = score_data.get("primary_drivers", [])
+        immediate_actions = score_data.get("immediate_actions", [])
+        summary = score_data.get("summary", "No summary available.")
+
+        # --- UI Rendering ---
+        st.markdown("### 🛡️ Overall Security Score")
+
+        # 1. Progress bar with gradient
+        st.markdown(f"""
+        <div style="background-color: #262730; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+            <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">Security Score: {score}/100</div>
+            <div style="background-color: #444; border-radius: 5px; height: 20px;">
+                <div style="width: {score}%; background-image: linear-gradient(to right, #ff4b4b, #ffa421, #a8d92a, #28a745); height: 100%; border-radius: 5px;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown(f"**Risk Level:** `{risk_level}`")
+        st.markdown(f"**Summary:** *{summary}*")
+
+        st.markdown("---")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.subheader("Primary Risk Drivers")
+            if primary_drivers:
+                for driver in primary_drivers:
+                    st.markdown(f"- {driver}")
+            else:
+                st.info("No primary risk drivers identified.")
+
+        with col2:
+            st.subheader("Immediate Actions Recommended")
+            if immediate_actions:
+                for action in immediate_actions:
+                    st.markdown(f"- {action}")
+            else:
+                st.info("No immediate actions recommended.")
+
+    except (json.JSONDecodeError, AttributeError) as e:
+        st.error("Failed to parse security score response.")
+        st.text(score_json_string)
+
 # Streamlit setup
 st.set_page_config(page_title="Codebase Analyzer", layout="wide")
 st.title("📁 Codebase Analyzer")
 
 # Default supported code file extensions
-DEFAULT_EXTENSIONS = {'.py', '.js', '.ts', '.html', '.css', '.java', '.cpp', '.cs'}
+DEFAULT_EXTENSIONS = {'.py', '.js', '.ts', '.html', '.css', '.java', '.cpp', '.cs', '.c'}
 
 # Initialize session state to preserve scanned files
 if "code_files" not in st.session_state:
@@ -172,8 +226,9 @@ with st.sidebar:
 if st.session_state.selected_file and st.session_state.scanned_folder:
     st.success(f"📄 Showing details for: `{st.session_state.selected_file}`")
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["📄 File Content", "🧠 Code Analysis", "📚 Learning Resources", "💬 AI Chat"])
+    # Added new Security Flaws tab (tab4) and shifted Chat to tab5
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["📄 File Content", "🧠 Code Analysis", "📚 Learning Resources", "🔐 Security Flaws", "💬 AI Chat"])
 
     with tab1:
         content = read_file_content(st.session_state.scanned_folder, st.session_state.selected_file)
@@ -202,6 +257,50 @@ if st.session_state.selected_file and st.session_state.scanned_folder:
         st.markdown(tutorials)
 
     with tab4:
+        # Multi-agent security pipeline (overall -> category -> score) displayed vertically
+        if "agent" not in st.session_state:
+            st.session_state.agent = RampUpAgent()
+
+        st.subheader("🔐 Security Flaws")
+        content = read_file_content(st.session_state.scanned_folder, st.session_state.selected_file)
+
+        overall_key = f"security_overall_{st.session_state.selected_file}"
+        category_key = f"security_categories_{st.session_state.selected_file}"
+        score_key = f"security_score_{st.session_state.selected_file}"
+
+        # Step 1: Overall findings
+        if overall_key not in st.session_state:
+            with st.spinner("🛡️ Generating overall security findings..."):
+                st.session_state[overall_key] = st.session_state.agent.fetch_security_flaws(
+                    st.session_state.selected_file, content
+                )
+        security_fllows = st.session_state[overall_key]
+
+        # Step 2: Category breakdown (feeds from overall findings)
+        if category_key not in st.session_state:
+            with st.spinner("📂 Generating category breakdown..."):
+                st.session_state[category_key] = st.session_state.agent.fetch_security_flaws_by_category(
+                    st.session_state.selected_file, content, security_fllows
+                )
+
+        # Step 3: Security score (uses both previous outputs)
+        if score_key not in st.session_state:
+            with st.spinner("📊 Computing security risk score..."):
+                st.session_state[score_key] = st.session_state.agent.compute_security_score(
+                    st.session_state.selected_file,
+                    content,
+                    security_fllows,
+                    st.session_state[category_key]
+                )
+
+        # Display Score
+        render_security_score(st.session_state[score_key])
+
+        # Display Category Breakdown (primary detailed output per request)
+        st.markdown("### 🗂️ Category Breakdown")
+        st.markdown(st.session_state[category_key])
+
+    with tab5:
         st.subheader("💬 Chat with AI Assistant")
         st.write("Ask questions about your codebase, get explanations, or request code improvements.")
 
